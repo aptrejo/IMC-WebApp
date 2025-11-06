@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <title>Panel IMC</title>
+</head>
+<body>
+<nav><a href="/">Inicio</a> | <a href="/salir">Salir</a></nav>
+<h1>Panel</h1>
+
+<form id="formIMC">
+  <label>Masa (kg): <input name="masaKg" type="number" step="0.1" min="0.1" required></label>
+  <button type="submit">Calcular y guardar</button>
+</form>
+
+<h2>Histórico</h2>
+<table id="tabla">
+  <thead><tr><th>Fecha</th><th>Masa</th><th>IMC</th><th>Clasificación</th></tr></thead>
+  <tbody></tbody>
+</table>
+
+<script>
+async function cargar(){
+  const r = await fetch('/api/mediciones/mias', {headers:{'Accept':'application/json'}});
+  const data = r.ok ? await r.json() : [];
+  const tb = document.querySelector('#tabla tbody'); tb.innerHTML = '';
+  data.forEach(m => {
+    const imc = m.imc;
+    const cat = imc < 18.5 ? 'Bajo peso' : (imc < 25 ? 'Normal' : (imc < 30 ? 'Sobrepeso' : 'Obesidad'));
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${(m.fechaHora||'').replace('T',' ')}</td><td>${m.masaKg}</td><td>${imc}</td><td>${cat}</td>`;
+    tb.appendChild(tr);
+  });
+}
+document.querySelector('#formIMC').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  await fetch('/api/mediciones', {method:'POST', body: new URLSearchParams(fd)});
+  e.target.reset();
+  cargar();
+});
+cargar();
+</script>
+</body>
+</html>
